@@ -4,3 +4,7 @@
 [submodule "Frontend"]
 	path = Frontend
 	url = https://github.com/RackChief/Frontend.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/RackChief/rackchief.github.io.git
+	update = none
