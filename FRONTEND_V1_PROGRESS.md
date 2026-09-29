@@ -1,6 +1,6 @@
 # Frontend V1 work state — 2026-09-29
 
-The active scope is `Frontend/RackChief-Frontend-V1-Goals.md` (Nuxt edition). V1 is **incomplete**. Work was stopped at the user's request after the image-service milestone was interrupted. Do not retire the React app or switch the primary Compose stack yet.
+The active scope is `Frontend/RackChief-Frontend-V1-Goals.md` (Nuxt edition). V1 is **incomplete**. Do not retire the React app or switch the primary Compose stack yet.
 
 ## Implemented
 
@@ -16,14 +16,15 @@ The active scope is `Frontend/RackChief-Frontend-V1-Goals.md` (Nuxt edition). V1
 - The staging stack returned HTTP 200 for page routes and the unauthenticated asset API returned 401.
 - A known Dell PowerEdge R730xd front image fetched from the NetBox Library and resolved from the local cache on a second lookup. A real development asset with model `R730XD` resolved the same default image.
 - Custom image upload returned 200; image read returned PNG bytes; a backend restart preserved the override; deletion returned 204 and cleared override metadata. Invalid upload returned 400 and unauthenticated upload returned 401. The generated OpenAPI document contained the image paths.
+- After a full Compose down/up cycle, a known default image returned 200 from the `netbox` cache with the cache file's modification time unchanged. A signed image for an asset without manufacturer/model returned 404 through IPX.
 
-## Immediate unresolved issue
+## Signed image URL follow-up
 
-The final signed image URL change is **not working end to end**. The authenticated `/api/v1/device-images/:assetId/urls` route returned 200, and direct GET using its signed URL returned 200. The equivalent Nuxt Image IPX URL returned 400 because its query parameters were not forwarded to the backend image route. An unsigned direct image request also returned 400 from query validation. This means current rack and asset image rendering may show only the generic fallback. The next implementation step is to put expiry/signature in URL path segments (and use a nonce for cache busting), then update the backend route, OpenAPI, frontend URL handling, and repeat the IPX check. No fix was made after the user requested an immediate stop.
+The initial query-string signature failed through Nuxt Image IPX. The resumed work moved expiry, a cache-busting nonce, and the signature into URL path segments. The authenticated URL issuer returned 200; a valid image returned 200 directly and through IPX; an unsigned URL returned 404 and a tampered signature returned 401. The optimized PNG response was 57,892 bytes. This proves the HTTP image path, but a browser rendering pass is still needed to verify the visual fallback and upload UI.
 
 ## Remaining V1 work
 
-- Resolve the signed image URL/IPX issue, test missing-image fallback and cache persistence through a full stack restart, and assess image lookup coverage and remote-error caching.
+- Test missing-image fallback visually in a browser; assess image lookup coverage and remote-error caching.
 - Complete a requirement-by-requirement audit of the Nuxt goals, including UI behavior, auth/session expiry, API error states, all CRUD flows, responsive/accessibility checks, and the V1 demo dataset. Current HTTP checks do not prove browser UI behavior.
 - Review the image route security and operational behavior, including public exposure of signed URLs, upload validation, cache lifecycle, and upstream timeouts.
 - Once Nuxt reaches and verifies full parity, switch the primary Compose stack and docs to Nuxt and retire the React app as directed by the goals file.

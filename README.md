@@ -20,7 +20,7 @@ docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up
 ```
 
-`down -v` removes the two dependency volumes. It does not affect the hosted database.
+`down -v` removes the two dependency volumes. It does not affect the hosted database or the device-image cache, which is bind-mounted at `.data/device-images/`.
 
 Useful commands:
 
@@ -43,3 +43,5 @@ docker compose -f docker-compose.nuxt.dev.yml up --build
 ```
 
 Open `http://localhost:5175`. The staging frontend proxies `/api/v1` and `/mcp` to the same private backend container. Stop the stack with `docker compose -f docker-compose.nuxt.dev.yml down`. Run `npm run typecheck` and `npm run build` from `Frontend/nuxt` for local checks.
+
+The backend fetches matching front/rear device elevations from the NetBox Community Device Type Library when first needed and caches them under `.data/device-images/netbox/`. Custom overrides are stored under `.data/device-images/custom/`. Back up this directory if custom images must survive a host replacement. Image reads use expiring URLs issued after authentication; the frontend renders them through Nuxt Image.
