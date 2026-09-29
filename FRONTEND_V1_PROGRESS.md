@@ -30,13 +30,21 @@ The initial query-string signature failed through Nuxt Image IPX. The resumed wo
 - After rebuilding staging, asset creation succeeded, but navigation to its detail page raised `A <SelectItem /> must have a value prop that is not an empty string` and `Cannot read properties of null (reading 'type')`. The temporary asset was deleted. Nuxt `USelect` options with `value: ''` appear in `AssetForm.vue`, `ComponentForm.vue`, `AssetNetwork.vue`, locations and racks pages. Replace those empty option values with a UI sentinel and map it to `null` before API calls, then repeat the asset lifecycle and other form checks.
 - Staging Compose is stopped. No disposable test records remain. The pending code changes are committed with this progress note as a pause checkpoint; the empty-select issue is still unresolved.
 
+## Implementation after the pause
+
+- Replaced Nuxt `USelect` options with empty values across assets, components, network ports/connections, locations, and racks. The UI uses a nonempty selection marker and sends `null` for optional API fields.
+- Before the instruction to stop frontend checks, authenticated Chromium successfully created, opened, edited, archived, restored, and deleted a disposable asset. It also rendered the component, location, and rack forms without page errors. A second disposable run created, edited, and deleted a location and spare component; created and edited a rack; placed and removed an asset; and deleted the rack. Test records were cleaned up.
+- Subsequent source changes have **not** been checked: missing Supabase sessions redirect to login; project item type changes clear purchase-only data; location parent choices exclude descendants; device-image lookup has a total time budget and short retry pause after upstream errors; permanent asset deletion cleans up custom image files; temporary image upload files no longer count as available overrides.
+- The user requested implementation only and will inspect manually. Do not run frontend builds, typechecks, browsers, or other frontend checks until that instruction changes. The Nuxt staging Compose stack is stopped.
+- Automatic approval review rejected removing the tracked React/Vite app because full Nuxt V1 parity has not been verified. Do not remove React or switch the primary Compose app as an indirect workaround. That migration remains pending manual inspection or renewed authorization after parity evidence is available.
+
 ## Remaining V1 work
 
 - Test missing-image fallback and upload UI visually in a browser; assess image lookup coverage and remote-error caching.
-- Fix Nuxt empty-value `USelect` options, then complete browser CRUD lifecycle checks. The latest asset creation succeeded but the detail page failed to render.
-- Complete a requirement-by-requirement audit of the Nuxt goals, including UI behavior, auth/session expiry, API error states, all CRUD flows, responsive/accessibility checks, and the V1 demo dataset. Current HTTP checks do not prove browser UI behavior.
+- Manually inspect project, networking, relationships, MCP token, image upload/fallback, login/logout, session expiry, error states, and responsive/accessibility behavior. Asset, location, spare component, rack, and placement browser flows passed before the check restriction; later source edits remain unverified.
+- Complete a requirement-by-requirement audit of the Nuxt goals and V1 demo dataset with evidence from the user's manual inspection when available.
 - Review the image route security and operational behavior, including public exposure of signed URLs, upload validation, cache lifecycle, and upstream timeouts.
-- Once Nuxt reaches and verifies full parity, switch the primary Compose stack and docs to Nuxt and retire the React app as directed by the goals file.
+- Once Nuxt reaches and verifies full parity, switch the primary Compose stack and docs to Nuxt and retire the React app as directed by the goals file. The attempted tracked React deletion was rejected by automatic approval review pending this evidence.
 
 ## Resume commands
 
