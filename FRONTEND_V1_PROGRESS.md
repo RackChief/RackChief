@@ -1,51 +1,30 @@
 # Frontend V1 work state — 2026-09-29
 
-The active scope is `Frontend/RackChief-Frontend-V1-Goals.md` (Nuxt edition). V1 is **incomplete**. Do not retire the React app or switch the primary Compose stack yet.
+The scope is [Frontend/RackChief-Frontend-V1-Goals.md](Frontend/RackChief-Frontend-V1-Goals.md). The Nuxt implementation is the default development frontend. **V1 is not yet verified or tagged.** The user requested no further frontend checks and will inspect the application manually.
 
-## Implemented
+## Current implementation
 
-- Existing React app was expanded with component inventory, locations, racks and placement, network details, asset relationships, project links, MCP settings, and same-origin API/MCP proxies. It remains the primary app in `docker-compose.dev.yml`.
-- A Nuxt 4 staging app lives in `Frontend/nuxt`, run with `docker-compose.nuxt.dev.yml` on port 5175. It has Supabase login/session handling, protected routes, centralized API access, assets and asset detail, components and spares, locations, racks and placement, network inventory, relationships, projects, MCP settings, About/Attributions, and RackChief branding.
-- Backend device-image routes and OpenAPI entries were added in `Backend/src/modules/device-images`. Images are fetched lazily from the NetBox Community Device Type Library, cached by manufacturer/model, and overridden by per-asset PNG/JPEG/WebP uploads. Both Compose files bind `./.data/device-images` to `/data/device-images`, so the cache survives container recreation and `docker compose down -v`.
-- Asset and rack views now render a `DeviceFaceplate` through Nuxt Image, with a generic labeled faceplate fallback. Asset detail includes custom front/rear upload and removal controls.
+- `Frontend/nuxt` is the sole tracked frontend application. It uses Nuxt 4, Vue 3, TypeScript, Nuxt UI, Nuxt Icon, Nuxt Image, and Supabase JS for authentication only. RackChief data comes from the backend through a shared `/api/v1` client. The stale tracked React/Vite source, dependencies, assets, and configuration were removed after explicit user approval.
+- Root `docker-compose.dev.yml` now runs Nuxt on `FRONTEND_PORT` (default 5173) with same-origin `/api/v1` and `/mcp` proxying. The redundant Nuxt staging Compose file was removed. Root and Frontend READMEs describe the current setup.
+- Nuxt routes cover login, assets and asset detail, components and spares, locations, racks and placement, projects, MCP settings, and About/Attributions. Asset detail includes hardware, network interfaces/IPs/ports/connections, rack placement, relationships, project links, and device imagery.
+- The backend lazily retrieves elevation images from the NetBox Community Device Type Library, caches them under `.data/device-images/netbox/`, and supports per-asset PNG/JPEG/WebP overrides under `.data/device-images/custom/`. Signed image URLs render through Nuxt Image; missing images use a generic labeled faceplate. The bind mount preserves cache and overrides across container recreation.
+- Optional Nuxt select choices now use nonempty UI markers mapped to nullable backend fields. Missing Supabase sessions redirect to login. Location editing excludes descendant parent choices. Switching a project item from purchase to work clears purchase-only fields. Device-image lookup has a bounded upstream budget and temporary retry pause after errors; deleting an asset removes its custom image files.
 
-## Verification completed
+## Evidence gathered before the no-check instruction
 
-- Backend `npm run build` passed after the device-image changes.
-- Nuxt `npm run typecheck` and `npm run build` passed after the signed URL code was added.
-- The staging stack returned HTTP 200 for page routes and the unauthenticated asset API returned 401.
-- A known Dell PowerEdge R730xd front image fetched from the NetBox Library and resolved from the local cache on a second lookup. A real development asset with model `R730XD` resolved the same default image.
-- Custom image upload returned 200; image read returned PNG bytes; a backend restart preserved the override; deletion returned 204 and cleared override metadata. Invalid upload returned 400 and unauthenticated upload returned 401. The generated OpenAPI document contained the image paths.
-- After a full Compose down/up cycle, a known default image returned 200 from the `netbox` cache with the cache file's modification time unchanged. A signed image for an asset without manufacturer/model returned 404 through IPX.
+- Backend build, Nuxt typecheck/build, and the old React build passed at earlier checkpoints. The current source and Compose migration have **not** been built or typechecked.
+- Authenticated Chromium loaded the main Nuxt pages and a known Dell asset with front/rear images. At a 390 px viewport the rack page no longer overflowed. A disposable asset was created, opened, edited, archived, restored, and deleted. Disposable locations, spare components, racks, and rack placements passed create/edit/delete flows with no page errors; test records were cleaned up.
+- The authenticated signed-image URL issuer returned 200, direct and IPX image reads returned 200, an unsigned image URL returned 404, and a tampered signature returned 401. A cached default image survived a full Compose down/up without its cache file being rewritten. A custom override was uploaded, read after backend restart, and removed. These checks preceded the latest image service edits.
+- The development database was not reset. The default image cache remains in ignored `.data/device-images/`. Root `assets/` is user-provided untracked brand material and was left untouched.
 
-## Signed image URL follow-up
+## Manual V1 review still needed
 
-The initial query-string signature failed through Nuxt Image IPX. The resumed work moved expiry, a cache-busting nonce, and the signature into URL path segments. The authenticated URL issuer returned 200; a valid image returned 200 directly and through IPX; an unsigned URL returned 404 and a tampered signature returned 401. The optimized PNG response was 57,892 bytes.
+1. Start the default stack with `docker compose -f docker-compose.dev.yml up --build` and open the Nuxt app at `http://localhost:5173` (or the configured port). Confirm same-origin API and `/mcp` proxy behavior.
+2. Check login, logout, session persistence/expiry, protected-route redirects, and readable validation, 401, 404, 409, and server-error states.
+3. Check projects end to end: create/edit/archive/restore/delete, asset associations, work/purchase items, costs, dates, links/vendor fields, and updates/history.
+4. Check installed/spare hardware, location hierarchy, rack front/rear layouts, placement conflicts, interfaces, ports, connections, IPv4/IPv6 addresses, and relationships against the V1 demo dataset.
+5. Check MCP enablement, token creation and one-time reveal, rename, expiration, enable/disable, and revocation. Confirm no raw token persists after leaving the create flow.
+6. Check default device images, generic fallback for an unknown model, custom upload/removal, and cache persistence. Review narrow-screen layout, keyboard operation, focus, labels, and contrast.
+7. Run `npm run typecheck` and `npm run build` from `Frontend/nuxt` when frontend checks are authorized again. Review the migrated default Compose startup. Do not tag V1 until these checks and the full goals audit pass.
 
-## Latest browser pass and paused work
-
-- Authenticated Chromium checks loaded Nuxt assets, components, locations, racks, projects, MCP settings, and About without page errors. An existing Dell asset detail rendered front and rear images with nonzero natural widths. Demo rack placements used generic faceplates because their manufacturer/model fields are empty.
-- The rack page overflowed a 390 px viewport. The pending Nuxt CSS change constrained rack rows and faceplates; Chromium then reported `document.scrollWidth === 390` with no overflowing elements.
-- A disposable asset create attempt exposed an invalid empty IP address sent to PostgreSQL `inet`. Pending changes make asset create omit blank optional strings in both Nuxt and React and use the networking IP schema for backend create/update validation. Backend build, Nuxt typecheck/build, and React build passed after those changes.
-- After rebuilding staging, asset creation succeeded, but navigation to its detail page raised `A <SelectItem /> must have a value prop that is not an empty string` and `Cannot read properties of null (reading 'type')`. The temporary asset was deleted. Nuxt `USelect` options with `value: ''` appear in `AssetForm.vue`, `ComponentForm.vue`, `AssetNetwork.vue`, locations and racks pages. Replace those empty option values with a UI sentinel and map it to `null` before API calls, then repeat the asset lifecycle and other form checks.
-- Staging Compose is stopped. No disposable test records remain. The pending code changes are committed with this progress note as a pause checkpoint; the empty-select issue is still unresolved.
-
-## Implementation after the pause
-
-- Replaced Nuxt `USelect` options with empty values across assets, components, network ports/connections, locations, and racks. The UI uses a nonempty selection marker and sends `null` for optional API fields.
-- Before the instruction to stop frontend checks, authenticated Chromium successfully created, opened, edited, archived, restored, and deleted a disposable asset. It also rendered the component, location, and rack forms without page errors. A second disposable run created, edited, and deleted a location and spare component; created and edited a rack; placed and removed an asset; and deleted the rack. Test records were cleaned up.
-- Subsequent source changes have **not** been checked: missing Supabase sessions redirect to login; project item type changes clear purchase-only data; location parent choices exclude descendants; device-image lookup has a total time budget and short retry pause after upstream errors; permanent asset deletion cleans up custom image files; temporary image upload files no longer count as available overrides.
-- The user requested implementation only and will inspect manually. Do not run frontend builds, typechecks, browsers, or other frontend checks until that instruction changes. The Nuxt staging Compose stack is stopped.
-- Automatic approval review rejected removing the tracked React/Vite app because full Nuxt V1 parity has not been verified. Do not remove React or switch the primary Compose app as an indirect workaround. That migration remains pending manual inspection or renewed authorization after parity evidence is available.
-
-## Remaining V1 work
-
-- Test missing-image fallback and upload UI visually in a browser; assess image lookup coverage and remote-error caching.
-- Manually inspect project, networking, relationships, MCP token, image upload/fallback, login/logout, session expiry, error states, and responsive/accessibility behavior. Asset, location, spare component, rack, and placement browser flows passed before the check restriction; later source edits remain unverified.
-- Complete a requirement-by-requirement audit of the Nuxt goals and V1 demo dataset with evidence from the user's manual inspection when available.
-- Review the image route security and operational behavior, including public exposure of signed URLs, upload validation, cache lifecycle, and upstream timeouts.
-- Once Nuxt reaches and verifies full parity, switch the primary Compose stack and docs to Nuxt and retire the React app as directed by the goals file. The attempted tracked React deletion was rejected by automatic approval review pending this evidence.
-
-## Resume commands
-
-From the repository root, run `docker compose -f docker-compose.nuxt.dev.yml up --build` to start staging, and `docker compose -f docker-compose.nuxt.dev.yml down` to stop it. From `Frontend/nuxt`, run `npm run typecheck` and `npm run build`; from `Backend`, run `npm run build`. Staging services were stopped before this state was recorded. The development database was not reset. Temporary browser-test assets and the custom image override were removed; the downloaded default image remains in the ignored `.data/device-images` cache. Root `assets/` is user-provided untracked brand material and was left untouched.
+The Nuxt frontend and backend containers were stopped before this record was updated. No frontend build, typecheck, or browser run was performed after the user's no-check instruction.
