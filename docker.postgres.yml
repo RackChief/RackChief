@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${PG_USER:?Set PG_USER in .env}
+      POSTGRES_PASSWORD: ${PG_PASS:?Set PG_PASS in .env}
+      POSTGRES_DB: ${PG_DB_NAME:?Set PG_DB_NAME in .env}
+    ports:
+      - "127.0.0.1:${PG_TEST_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_data:
