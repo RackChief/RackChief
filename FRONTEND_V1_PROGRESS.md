@@ -4,11 +4,11 @@ The scope is [Frontend/RackChief-Frontend-V1-Goals.md](Frontend/RackChief-Fronte
 
 ## Current implementation
 
-- `Frontend/nuxt` is the sole tracked frontend application. It uses Nuxt 4, Vue 3, TypeScript, Nuxt UI, Nuxt Icon, Nuxt Image, and Supabase JS for authentication only. RackChief data comes from the backend through a shared `/api/v1` client. The stale tracked React/Vite source, dependencies, assets, and configuration were removed after explicit user approval.
+- `Frontend/nuxt` is the sole tracked frontend application. It uses Nuxt 4, Vue 3, TypeScript, Nuxt UI, Nuxt Icon, and Nuxt Image. Authentication uses Better Auth session cookies through the backend; RackChief data comes from the backend through a shared `/api/v1` client. The stale tracked React/Vite source, dependencies, assets, and configuration were removed after explicit user approval.
 - Root `docker-compose.dev.yml` now runs Nuxt on `FRONTEND_PORT` (default 5173) with same-origin `/api/v1` and `/mcp` proxying. The redundant Nuxt staging Compose file was removed. Root and Frontend READMEs describe the current setup.
 - Nuxt routes cover login, assets and asset detail, components and spares, locations, racks and placement, projects, MCP settings, and About/Attributions. Asset detail includes hardware, network interfaces/IPs/ports/connections, rack placement, relationships, project links, and device imagery.
 - The backend lazily retrieves elevation images from the NetBox Community Device Type Library, caches them under `.data/device-images/netbox/`, and supports per-asset PNG/JPEG/WebP overrides under `.data/device-images/custom/`. Signed image URLs render through Nuxt Image; missing images use a generic labeled faceplate. The bind mount preserves cache and overrides across container recreation.
-- Optional Nuxt select choices now use nonempty UI markers mapped to nullable backend fields. Missing Supabase sessions redirect to login. Location editing excludes descendant parent choices. Switching a project item from purchase to work clears purchase-only fields. Device-image lookup has a bounded upstream budget and temporary retry pause after errors; deleting an asset removes its custom image files.
+- Optional Nuxt select choices now use nonempty UI markers mapped to nullable backend fields. Missing Better Auth sessions redirect to login. Location editing excludes descendant parent choices. Switching a project item from purchase to work clears purchase-only fields. Device-image lookup has a bounded upstream budget and temporary retry pause after errors; deleting an asset removes its custom image files.
 
 ## Evidence gathered before the no-check instruction
 
